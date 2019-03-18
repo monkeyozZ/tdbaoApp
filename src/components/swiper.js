@@ -77,7 +77,7 @@ export default class extends Component {
           activeDot={<View style={{ backgroundColor: '#000', width: 8, height: 8, borderRadius: 4, marginLeft: 3, marginRight: 3, marginTop: 3, marginBottom: 3 }} />}
           paginationStyle={{
             bottom: 0, left: 0, right: 0
-          }} loop>
+          }} loop autoplay>
           <View style={styles.slide} /* title={<Text numberOfLines={1}>Aussie tourist dies at Bali hotel</Text>} */>
             <Image resizeMode='stretch' style={styles.image} source={require('../static/img/banner.png')} />
           </View>

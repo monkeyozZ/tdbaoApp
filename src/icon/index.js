@@ -7,4 +7,9 @@ export default {
   ownActive: require('./img/ownActive.png'),
   down: require('./img/down.png'),
   address: require('./img/address.png'),
+  house: require('./img/house.png'),
+  car: require('./img/car.png'),
+  baodan: require('./img/baodan.png'),
+  card: require('./img/card.png'),
+  wld: require('./img/wld.png'),
 }

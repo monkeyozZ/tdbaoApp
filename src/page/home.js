@@ -1,23 +1,28 @@
 import React, { Component } from 'react'
-import { TouchableOpacity, View, Text, StyleSheet, Dimensions, ScrollView, Animated } from 'react-native'
+import { TouchableOpacity, View, Text, StyleSheet, Dimensions, ScrollView, Platform, StatusBar} from 'react-native'
+import {Header  } from 'react-navigation'
 import City from '../components/headerLeftCity'
 import FilterButton from '../components/filterButton'
+import OrderListItem from '../components/orderListItem'
 import ResetHeaderRight from '../components/resetHeaderRight'
+import HeaderRightRefresh from '../components/headerRightRefresh'
 import FilterList from '../components/filterList'
 import Swiper from '../components/swiper'
 import { setStatusBar } from '../components/HOC/statusBar'
-import ScrollableTabView, { DefaultTabBar, ScrollableTabBar } from 'react-native-scrollable-tab-view'
+import ScrollableTabView, { ScrollableTabBar } from 'react-native-scrollable-tab-view'
 import { SpringScrollView } from "react-native-spring-scrollview";
-import {
-  WithLastDateHeader,
-  ChineseNormalHeader,
-  ChineseWithLastDateHeader,
-} from "react-native-spring-scrollview/Customize";
 import { LargeList, NativeLargeList } from "react-native-largelist-v3";
+import {
+  ChineseWithLastDateHeader,
+  ChineseWithLastDateFooter
+} from "react-native-spring-scrollview/Customize";
 import Modal from 'react-native-modalbox';
 import { inject, observer } from 'mobx-react'
-import { computed, observable } from 'mobx'
+import { computed, observable, action } from 'mobx'
+import { ifiPhoneX } from '../utils/device'
 const { width, height } = Dimensions.get('window')
+const headerHeight = Platform.OS === 'android' ? StatusBar.currentHeight + Header.HEIGHT : Header.HEIGHT
+const BottomTabBarHeight = ifiPhoneX(49+34, 49)
 
 @setStatusBar({
   barStyle: 'dark-content',
@@ -32,6 +37,8 @@ export default class Home extends Component{
     super(props)
     this._openModal = this._openModal.bind(this)
     this._closeModal = this._closeModal.bind(this)
+    this._watchScroll = this._watchScroll.bind(this)
+    this._watchInsideScroll = this._watchInsideScroll.bind(this)
   }
   static navigationOptions = ({ navigation }) => {
     return {
@@ -44,16 +51,52 @@ export default class Home extends Component{
       },
       headerTintColor: "#333333",
       headerLeft: <TouchableOpacity onPress={() => navigation.navigate("SelectCity")}><City/></TouchableOpacity> ,
-      headerRight: <ResetHeaderRight />
+      headerRight: <HeaderRightRefresh/>
     }
   }
+  @observable scrollAbleStatus = true
+  @observable insideScrollAbleStatus = false
+  @observable showsVerticalScrollIndicatorStatus = true
+  @observable showsInsileVerticalScrollIndicatorStatus = false
+  @observable bouncesStatus = true
+
   @computed get filterStore() {
     const { rootStore } = this.props;
     const { filterStore } = rootStore;
     return filterStore;
   }
-  _tabChange(obj) {
-    const { i, ref } = obj
+
+
+  @action
+  disableScrollAbleStatus() {
+    this.scrollAbleStatus = false
+    this.showsVerticalScrollIndicatorStatus = false
+  }
+  @action
+  enableScrollAbleStatus() {
+    this.scrollAbleStatus = true
+    this.showsVerticalScrollIndicatorStatus = true
+  }
+  @action
+  disableInsideScrollAbleStatus() {
+    this.insideScrollAbleStatus = false
+    this.showsInsileVerticalScrollIndicatorStatus = false
+  }
+  @action
+  enableInsideScrollAbleStatus() {
+    this.insideScrollAbleStatus = true
+    this.showsInsileVerticalScrollIndicatorStatus = true
+  }
+
+
+  @action
+  disableBouncesStatus() {
+    this.bouncesStatus = false
+  }
+
+  @action
+  enableBouncesStatus() {
+    this.bouncesStatus = true
   }
 
   _openModal() {
@@ -68,16 +111,37 @@ export default class Home extends Component{
     // this.props.navigation.setParams({ openFilter: this._openModal })
   }
 
+  componentWillUnmount() {
+    this.enableScrollAbleStatus()
+  }
   _renderIndexPath = ({ section: section, row: row }) => {
     return (
-      <View style={styles.row}>
-        <Text>
-          Section {section} Row {row}
-        </Text>
-        <View style={styles.line} />
-      </View>
+      <TouchableOpacity>
+        <OrderListItem ref={(ref) => (this._item = ref)}/>
+      </TouchableOpacity>
     );
   };
+
+  _watchScroll(event) {
+    let top = event.nativeEvent.contentOffset.y
+    /* if (top > 100) {
+      this.disableBouncesStatus()
+    } else {
+      this.enableBouncesStatus()
+    } */
+    if (top === 120) {
+      this.disableScrollAbleStatus()
+      //this.enableInsideScrollAbleStatus()
+    }
+  }
+
+  _watchInsideScroll(event) {
+    let top = event.nativeEvent.contentOffset.y
+    if (top === 0) {
+      this.disableInsideScrollAbleStatus()
+      this.enableScrollAbleStatus()
+    }
+  }
 
   _contentCount = 20;
   _sectionCount = 10;
@@ -95,6 +159,14 @@ export default class Home extends Component{
     }
     return (
       <View style={styles.container}>
+        <ScrollView 
+        /* bounces={this.bouncesStatus}  */
+        bounces={false}
+        scrollEnabled={this.scrollAbleStatus} 
+        showsVerticalScrollIndicator={this.showsVerticalScrollIndicatorStatus} 
+        /* stickyHeaderIndices={[1]} */
+        onScroll = {this._watchScroll}
+        >
           <View style={styles.swiperBox}>
             <Swiper />
           </View>
@@ -111,33 +183,82 @@ export default class Home extends Component{
               tabLabel='全部可抢'
               data={data}
               style={{flex:1}}
-              heightForIndexPath={() => 50}
+              /* onScroll={this._watchInsideScroll} */
+              heightForIndexPath={() => 185}
               renderIndexPath={this._renderIndexPath}
-              ref={ref => (this._list = ref)}
               refreshHeader={ChineseWithLastDateHeader}
+              showsVerticalScrollIndicator={!this.showsVerticalScrollIndicatorStatus}
+              ref={ref => (this._list = ref)}
               onRefresh={() => {
                 setTimeout(() => {
                   this._list.endRefresh();
-                  setTimeout(() => this.setState({ prop: "your changed props" }));
+                  // setTimeout(() => this.setState({ prop: "your changed props" }));
                 }, 2000);
-              }} />
-            {/* <SpringScrollView tabLabel='全部可抢' style={{height: height}}>
+              }}
+              loadingFooter={ChineseWithLastDateFooter}
+              onLoading={()=>{
+                setTimeout(()=>{
+                  this._list.endLoading();
+                },2000);
+              }}
+              />
+            {/* <ScrollView tabLabel='全部可抢'
+            onScroll={this._watchInsideScroll}
+            style={styles.topNavItem}
+            bounces={false}
+            scrollEnabled={this.insideScrollAbleStatus} 
+             showsVerticalScrollIndicator={!this.showsVerticalScrollIndicatorStatus} 
+            >
                 {arr.map((i, index) =>
-                  <Text key={index} style={styles.text}>
-                    Modify the '_contentCount','_bounces' and '_scrollEnabled' in
-                    BouncesExample.js to check if VerticalScrollView works well.
-              </Text>
+                  <OrderListItem/>
                 )}
-            </SpringScrollView> */}
-              <View tabLabel='优选' style={styles.topNavItem}>
-                {arr.map((i, index) =>
-                  <Text key={index} style={styles.text}>
-                    Modify the '_contentCount','_bounces' and '_scrollEnabled' in
-                    BouncesExample.js to check if VerticalScrollView works well.
-              </Text>
-                )}
-              </View>
-              <Text tabLabel='淘单' style={styles.topNavItem}>project</Text>
+            </ScrollView> */}
+            <LargeList
+              tabLabel='优选'
+              data={data}
+              style={{flex:1}}
+              /* onScroll={this._watchInsideScroll} */
+              heightForIndexPath={() => 185}
+              renderIndexPath={this._renderIndexPath}
+              refreshHeader={ChineseWithLastDateHeader}
+              showsVerticalScrollIndicator={!this.showsVerticalScrollIndicatorStatus}
+              ref={ref => (this._list1 = ref)}
+              onRefresh={() => {
+                setTimeout(() => {
+                  this._list1.endRefresh();
+                  // setTimeout(() => this.setState({ prop: "your changed props" }));
+                }, 2000);
+              }}
+              loadingFooter={ChineseWithLastDateFooter}
+              onLoading={()=>{
+                setTimeout(()=>{
+                  this._list1.endLoading();
+                },2000);
+              }}
+              />
+            <LargeList
+              tabLabel='淘单'
+              data={data}
+              style={{flex:1}}
+              /* onScroll={this._watchInsideScroll} */
+              heightForIndexPath={() => 185}
+              renderIndexPath={this._renderIndexPath}
+              refreshHeader={ChineseWithLastDateHeader}
+              showsVerticalScrollIndicator={!this.showsVerticalScrollIndicatorStatus}
+              ref={ref => (this._list2 = ref)}
+              onRefresh={() => {
+                setTimeout(() => {
+                  this._list2.endRefresh();
+                  // setTimeout(() => this.setState({ prop: "your changed props" }));
+                }, 2000);
+              }}
+              loadingFooter={ChineseWithLastDateFooter}
+              onLoading={()=>{
+                setTimeout(()=>{
+                  this._list2.endLoading();
+                },2000);
+              }}
+              />
             </ScrollableTabView>
             <TouchableOpacity onPress={this._openModal} style={styles.filter}><FilterButton /></TouchableOpacity>
             </View>
@@ -154,6 +275,7 @@ export default class Home extends Component{
               <FilterList closeModal={this._closeModal} filterStore={this.filterStore}/>
             </View>
           </Modal>
+        </ScrollView>
       </View>
     )
   }
@@ -171,7 +293,8 @@ const styles = StyleSheet.create({
     height: 120
   },
   navContainer: { 
-    flex: 1, 
+    /* flex: 1, */
+    height: height - headerHeight - BottomTabBarHeight, 
     position: 'relative', 
   },
   topNavBox: {
@@ -179,7 +302,7 @@ const styles = StyleSheet.create({
     borderWidth: 0
   },
   topNavItem: {
-    paddingHorizontal: 15,
+    backgroundColor: '#f4f5f7'
   },
   topNavLineStyle: { 
     backgroundColor: '#2F7AFF',
