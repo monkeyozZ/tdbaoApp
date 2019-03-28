@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, Animated } from 'react-native'
 import { SpringScrollView } from "react-native-spring-scrollview";
 
 export default class Customer extends Component {
@@ -17,6 +17,9 @@ export default class Customer extends Component {
       textAlign: "center"
     },
     headerTintColor: "#333333"
+  }
+  constructor(props) {
+    super(props)
   }
   _contentCount = 20;
   render() {

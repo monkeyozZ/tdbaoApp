@@ -1,12 +1,12 @@
 import React, { Component } from 'react'
 import { View, StyleSheet } from 'react-native'
-import Icon from 'react-native-vector-icons/Feather';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export default class HeaderRightRefresh extends Component {
   render() {
     return (
       <View style={styles.box}>
-          <Icon name={'refresh-ccw'} size={20}/>
+        <Icon name={'vertical-align-top'} size={25}/>
       </View>
     )
   }

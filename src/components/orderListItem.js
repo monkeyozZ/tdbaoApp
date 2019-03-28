@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { View, Text,Image,Dimensions, StyleSheet, } from 'react-native'
+import { View, Text,Image,Dimensions, StyleSheet, Alert } from 'react-native'
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Button } from 'react-native-elements';
@@ -29,16 +29,26 @@ export default class OrderListItem extends React.Component{
         </View>
         <View style={styles.itemBody}>
           <View style={styles.city}>
-            <View style={styles.cityBox}>
-              <Icon name={'map-marker-outline'} size={18} style={styles.cityIcon}/>
-              <Text style={styles.cityText}>上海</Text>
+            <View style={styles.cityBox}> 
+              <Text style={styles.cityText}>
+              <Icon name={'map-marker-outline'} size={18} />
+              武汉
+              </Text>
             </View>
           </View>
           <View style={styles.order}>
             <Button
                 title="立即抢购"
                 buttonStyle={styles.orderBtn}
-                onPress={() => {}}
+              onPress={() => { Alert.alert(
+                '先充钱吧你',
+                '快去！！',
+                [
+                  {text: '滚滚滚', onPress: () => {} },
+                  {text: '好好好', onPress: () => {} },
+                ],
+                { cancelable: false }
+              )}}
               />
           </View>
         </View>
@@ -74,7 +84,6 @@ export default class OrderListItem extends React.Component{
             <Text style={styles.itemFooterText}>有微粒贷</Text>
           </View>
         </View>
-        <View style={styles.itemLine}></View>
       </View>
     );
     
@@ -138,11 +147,6 @@ const styles = StyleSheet.create({
   cityBox: {
     maxWidth: px2dp(80),
     flexDirection: 'row',
-    backgroundColor: '#EFF3FD',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    marginLeft: px2dp(10),
-    borderRadius: 5,
   },
   cityIcon: {
     marginLeft: px2dp(4)
@@ -150,7 +154,10 @@ const styles = StyleSheet.create({
   cityText: {
     flex: 2,
     justifyContent: 'center',
-    textAlign: 'center'
+    alignItems: 'center',
+    textAlign: 'center',
+    borderRadius: 5,
+    backgroundColor: '#EFF3FD',
   },
   order: {
     flex: 1,
@@ -182,9 +189,4 @@ const styles = StyleSheet.create({
   itemFooterText:{
     textAlign: 'center'
   },
-  itemLine: {
-    width: width,
-    height: px2dp(10),
-    backgroundColor: '#f4f5f7'
-  }
 })

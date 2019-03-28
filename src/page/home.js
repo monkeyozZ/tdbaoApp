@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import { TouchableOpacity, View, Text, StyleSheet, Dimensions, ScrollView, Platform, StatusBar} from 'react-native'
-import {Header  } from 'react-navigation'
+import { TouchableOpacity, View, Text, StyleSheet, Dimensions, ScrollView, Platform, StatusBar, TouchableHighlight, Alert, Animated} from 'react-native'
+import {Header} from 'react-navigation'
 import City from '../components/headerLeftCity'
 import FilterButton from '../components/filterButton'
 import OrderListItem from '../components/orderListItem'
@@ -12,6 +12,7 @@ import { setStatusBar } from '../components/HOC/statusBar'
 import ScrollableTabView, { ScrollableTabBar } from 'react-native-scrollable-tab-view'
 import { SpringScrollView } from "react-native-spring-scrollview";
 import { LargeList, NativeLargeList } from "react-native-largelist-v3";
+import { px2dp } from '../utils/px2dp'
 import {
   ChineseWithLastDateHeader,
   ChineseWithLastDateFooter
@@ -23,6 +24,17 @@ import { ifiPhoneX } from '../utils/device'
 const { width, height } = Dimensions.get('window')
 const headerHeight = Platform.OS === 'android' ? StatusBar.currentHeight + Header.HEIGHT : Header.HEIGHT
 const BottomTabBarHeight = ifiPhoneX(49+34, 49)
+
+_sectionCount = 1;
+_rowCount = 10;
+const data = [];
+for (let section = 0; section < this._sectionCount; ++section) {
+  const sContent = { items: [] };
+  for (let row = 0; row < this._rowCount; ++row) {
+    sContent.items.push(row);
+  }
+  data.push(sContent);
+}
 
 @setStatusBar({
   barStyle: 'dark-content',
@@ -39,6 +51,8 @@ export default class Home extends Component{
     this._closeModal = this._closeModal.bind(this)
     this._watchScroll = this._watchScroll.bind(this)
     this._watchInsideScroll = this._watchInsideScroll.bind(this)
+    this._resetListIndex = this._resetListIndex.bind(this)
+    this._tabChange = this._tabChange.bind(this)
   }
   static navigationOptions = ({ navigation }) => {
     return {
@@ -51,7 +65,7 @@ export default class Home extends Component{
       },
       headerTintColor: "#333333",
       headerLeft: <TouchableOpacity onPress={() => navigation.navigate("SelectCity")}><City/></TouchableOpacity> ,
-      headerRight: <HeaderRightRefresh/>
+      headerRight: navigation.getParam('headerRightComponents', <ResetHeaderRight/>)
     }
   }
   @observable scrollAbleStatus = true
@@ -59,6 +73,9 @@ export default class Home extends Component{
   @observable showsVerticalScrollIndicatorStatus = true
   @observable showsInsileVerticalScrollIndicatorStatus = false
   @observable bouncesStatus = true
+  @observable _nativeOffset = {
+                y: new Animated.Value(0)
+              };
 
   @computed get filterStore() {
     const { rootStore } = this.props;
@@ -116,51 +133,80 @@ export default class Home extends Component{
   }
   _renderIndexPath = ({ section: section, row: row }) => {
     return (
-      <TouchableOpacity>
+      <TouchableHighlight onPress={() => {
+        Alert.alert(
+          '还没做',
+          '你走吧！',
+          [
+            { text: '滚滚滚', onPress: () => {} },
+            { text: '好好好', onPress: () => {} },
+          ],
+          { cancelable: false }) }} activeOpacity={0.9} underlayColor='rgba(0,0,0,0.15)'>
+        <View style={{flex: 1}}>
         <OrderListItem ref={(ref) => (this._item = ref)}/>
-      </TouchableOpacity>
+          {data[section].items.length > 1 ? <View style={styles.itemLine}></View> : null}
+        </View>
+      </TouchableHighlight>
     );
   };
 
-  _watchScroll(event) {
+  _watchScroll(event) { //内层的也会监听到滚动事件，很奇怪
     let top = event.nativeEvent.contentOffset.y
-    /* if (top > 100) {
-      this.disableBouncesStatus()
-    } else {
-      this.enableBouncesStatus()
-    } */
-    if (top === 120) {
+    console.log(top)
+    if (this.scrollAbleStatus) { //仅监听外层滚动事件
+      if (this.showsVerticalScrollIndicatorStatus) {
+        this.props.navigation.setParams({
+          headerRightComponents:
+            <ResetHeaderRight />
+        })
+      }
+
+      if (top >= 120) {
       this.disableScrollAbleStatus()
-      //this.enableInsideScrollAbleStatus()
+        this.props.navigation.setParams({
+          headerRightComponents:
+            <TouchableOpacity onPress={this._resetListIndex}>
+              <HeaderRightRefresh />
+            </TouchableOpacity>
+        })
+      }
     }
   }
 
-  _watchInsideScroll(event) {
-    let top = event.nativeEvent.contentOffset.y
-    if (top === 0) {
+  _watchInsideScroll({ nativeEvent: { contentOffset: { x, y } } }) {
+    // let top = event.nativeEvent.contentOffset.y
+    /* if (top === 0) {
       this.disableInsideScrollAbleStatus()
       this.enableScrollAbleStatus()
+    } */
+    /* console.log("offset : x=", x, "y=", y); */
     }
+
+  _resetListIndex() {
+    this.enableScrollAbleStatus()
+    this._wrapper && this._wrapper.scrollTo({ x: 0, y: 0})
+    this._list && this._list.scrollTo({ x: 0, y: 0 }, false)
+    this._list1 && this._list1.scrollTo({ x: 0, y: 0 }, false)
+    this._list2 && this._list2.scrollTo({ x: 0, y: 0 }, false)
   }
 
-  _contentCount = 20;
-  _sectionCount = 10;
-  _rowCount = 10;
+  _tabChange(obj) {
+    console.log(obj.i)
+    this._wrapper && this._wrapper.scrollTo({ x: 0, y: 120 })
+    this.disableScrollAbleStatus()
+    this.props.navigation.setParams({
+      headerRightComponents:
+        <TouchableOpacity onPress={this._resetListIndex}>
+          <HeaderRightRefresh />
+        </TouchableOpacity>
+    })
+  }
   render() {
-    const arr = [];
-    for (let i = 0; i < this._contentCount; ++i) arr.push(i);
-    const data = [];
-    for (let section = 0; section < this._sectionCount; ++section) {
-      const sContent = { items: [] };
-      for (let row = 0; row < this._rowCount; ++row) {
-        sContent.items.push(row);
-      }
-      data.push(sContent);
-    }
+    console.log(this._nativeOffset.y)
     return (
       <View style={styles.container}>
         <ScrollView 
-        /* bounces={this.bouncesStatus}  */
+        ref={ref => (this._wrapper = ref)}
         bounces={false}
         scrollEnabled={this.scrollAbleStatus} 
         showsVerticalScrollIndicator={this.showsVerticalScrollIndicatorStatus} 
@@ -183,10 +229,11 @@ export default class Home extends Component{
               tabLabel='全部可抢'
               data={data}
               style={{flex:1}}
-              /* onScroll={this._watchInsideScroll} */
               heightForIndexPath={() => 185}
               renderIndexPath={this._renderIndexPath}
               refreshHeader={ChineseWithLastDateHeader}
+              scrollEnabled={!this.scrollAbleStatus}
+              onNativeContentOffsetExtract={this._nativeOffset}
               showsVerticalScrollIndicator={!this.showsVerticalScrollIndicatorStatus}
               ref={ref => (this._list = ref)}
               onRefresh={() => {
@@ -202,22 +249,10 @@ export default class Home extends Component{
                 },2000);
               }}
               />
-            {/* <ScrollView tabLabel='全部可抢'
-            onScroll={this._watchInsideScroll}
-            style={styles.topNavItem}
-            bounces={false}
-            scrollEnabled={this.insideScrollAbleStatus} 
-             showsVerticalScrollIndicator={!this.showsVerticalScrollIndicatorStatus} 
-            >
-                {arr.map((i, index) =>
-                  <OrderListItem/>
-                )}
-            </ScrollView> */}
             <LargeList
               tabLabel='优选'
               data={data}
               style={{flex:1}}
-              /* onScroll={this._watchInsideScroll} */
               heightForIndexPath={() => 185}
               renderIndexPath={this._renderIndexPath}
               refreshHeader={ChineseWithLastDateHeader}
@@ -240,7 +275,6 @@ export default class Home extends Component{
               tabLabel='淘单'
               data={data}
               style={{flex:1}}
-              /* onScroll={this._watchInsideScroll} */
               heightForIndexPath={() => 185}
               renderIndexPath={this._renderIndexPath}
               refreshHeader={ChineseWithLastDateHeader}
@@ -327,5 +361,10 @@ const styles = StyleSheet.create({
   text: {
     color: "black",
     fontSize: 22
+  },
+  itemLine: {
+    width: width,
+    height: px2dp(10),
+    backgroundColor: '#f4f5f7'
   }
 })
